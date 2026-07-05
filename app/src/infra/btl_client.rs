@@ -30,7 +30,7 @@ pub struct BtlResponse {
 impl BtlClient {
     pub fn from_env() -> Result<Self> {
         let base_url = env::var("BTL_RUNTIME_BASE_URL")
-            .unwrap_or_else(|_| "https://runtime.badtheorylabs.com/v1".to_string());
+            .unwrap_or_else(|_| "https://api.badtheorylabs.com/v1".to_string());
         let api_key = env::var("BTL_API_KEY")
             .map_err(|_| anyhow!("BTL_API_KEY not set in environment"))?;
 
