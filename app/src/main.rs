@@ -23,7 +23,7 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "sqlite://spendguard.db".to_string());
+        .unwrap_or_else(|_| "postgresql://localhost/spendguard".to_string());
     let db = Db::connect(&database_url).await?;
     let btl = BtlClient::from_env()?;
     let state = Arc::new(AppState::new(db, btl));
