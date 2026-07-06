@@ -1,17 +1,17 @@
 use anyhow::Result;
-use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
+use sqlx::{postgres::PgPoolOptions, PgPool};
 use uuid::Uuid;
 
 use crate::domain::{Agent, AgentStatus, CacheTier, RequestLog, Workflow};
 
 #[derive(Clone)]
 pub struct Db {
-    pool: SqlitePool,
+    pool: PgPool,
 }
 
 impl Db {
     pub async fn connect(database_url: &str) -> Result<Self> {
-        let pool = SqlitePoolOptions::new()
+        let pool = PgPoolOptions::new()
             .max_connections(5)
             .connect(database_url)
             .await?;
@@ -66,7 +66,7 @@ impl Db {
     pub async fn insert_agent(&self, agent: &Agent) -> Result<()> {
         sqlx::query(
             "INSERT INTO agents (id, name, monthly_budget_cents, current_spend_cents, status)
-             VALUES (?, ?, ?, ?, ?)",
+             VALUES ($1, $2, $3, $4, $5)",
         )
         .bind(agent.id.to_string())
         .bind(&agent.name)
@@ -79,7 +79,7 @@ impl Db {
     }
 
     pub async fn get_agent(&self, id: Uuid) -> Result<Option<Agent>> {
-        let row = sqlx::query_as::<_, AgentRow>("SELECT * FROM agents WHERE id = ?")
+        let row = sqlx::query_as::<_, AgentRow>("SELECT * FROM agents WHERE id = $1")
             .bind(id.to_string())
             .fetch_optional(&self.pool)
             .await?;
@@ -95,7 +95,7 @@ impl Db {
 
     pub async fn update_agent(&self, agent: &Agent) -> Result<()> {
         sqlx::query(
-            "UPDATE agents SET current_spend_cents = ?, status = ? WHERE id = ?",
+            "UPDATE agents SET current_spend_cents = $1, status = $2 WHERE id = $3",
         )
         .bind(agent.current_spend_cents)
         .bind(status_to_str(agent.status))
@@ -108,7 +108,7 @@ impl Db {
     pub async fn insert_workflow(&self, wf: &Workflow) -> Result<()> {
         sqlx::query(
             "INSERT INTO workflows (id, agent_id, name, kill_switch_threshold_pct, enabled)
-             VALUES (?, ?, ?, ?, ?)",
+             VALUES ($1, $2, $3, $4, $5)",
         )
         .bind(wf.id.to_string())
         .bind(wf.agent_id.to_string())
@@ -121,7 +121,7 @@ impl Db {
     }
 
     pub async fn get_workflow(&self, id: Uuid) -> Result<Option<Workflow>> {
-        let row = sqlx::query_as::<_, WorkflowRow>("SELECT * FROM workflows WHERE id = ?")
+        let row = sqlx::query_as::<_, WorkflowRow>("SELECT * FROM workflows WHERE id = $1")
             .bind(id.to_string())
             .fetch_optional(&self.pool)
             .await?;
@@ -133,7 +133,7 @@ impl Db {
             "INSERT INTO request_logs
              (id, agent_id, workflow_id, model, btl_cache_tier, benchmark_cost_cents,
               customer_charge_cents, saved_cents, latency_ms, ts)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
         )
         .bind(log.id.to_string())
         .bind(log.agent_id.to_string())
@@ -152,7 +152,7 @@ impl Db {
 
     pub async fn list_logs_for_agent(&self, agent_id: Uuid, limit: i64) -> Result<Vec<RequestLog>> {
         let rows = sqlx::query_as::<_, RequestLogRow>(
-            "SELECT * FROM request_logs WHERE agent_id = ? ORDER BY ts DESC LIMIT ?",
+            "SELECT * FROM request_logs WHERE agent_id = $1 ORDER BY ts DESC LIMIT $2",
         )
         .bind(agent_id.to_string())
         .bind(limit)
@@ -268,3 +268,4 @@ fn cache_tier_from_str(s: &str) -> CacheTier {
         _ => CacheTier::NoCache,
     }
 }
+
