@@ -11,10 +11,18 @@ pub struct Db {
 
 impl Db {
     pub async fn connect(database_url: &str) -> Result<Self> {
+        tracing::info!("connecting to database...");
         let pool = PgPoolOptions::new()
             .max_connections(5)
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .acquire_timeout(std::time::Duration::from_secs(5))
             .connect(database_url)
-            .await?;
+            .await
+            .map_err(|e| {
+                tracing::error!("failed to connect to database: {}", e);
+                e
+            })?;
+        tracing::info!("database connection established");
         let db = Self { pool };
         db.migrate().await?;
         Ok(db)
