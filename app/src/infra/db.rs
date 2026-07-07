@@ -60,6 +60,33 @@ impl Db {
             "CREATE INDEX IF NOT EXISTS idx_request_logs_agent_ts ON request_logs(agent_id, ts);"
         ).execute(&self.pool).await?;
 
+        // Migrate existing INT4 columns to BIGINT for databases created before PR #12.
+        // Wrapped in `let _ = ...` so errors are silently ignored when columns are
+        // already BIGINT or the table doesn't exist yet.
+        let _ = sqlx::query(
+            "ALTER TABLE agents ALTER COLUMN monthly_budget_cents TYPE BIGINT;"
+        ).execute(&self.pool).await;
+
+        let _ = sqlx::query(
+            "ALTER TABLE agents ALTER COLUMN current_spend_cents TYPE BIGINT;"
+        ).execute(&self.pool).await;
+
+        let _ = sqlx::query(
+            "ALTER TABLE request_logs ALTER COLUMN benchmark_cost_cents TYPE BIGINT;"
+        ).execute(&self.pool).await;
+
+        let _ = sqlx::query(
+            "ALTER TABLE request_logs ALTER COLUMN customer_charge_cents TYPE BIGINT;"
+        ).execute(&self.pool).await;
+
+        let _ = sqlx::query(
+            "ALTER TABLE request_logs ALTER COLUMN saved_cents TYPE BIGINT;"
+        ).execute(&self.pool).await;
+
+        let _ = sqlx::query(
+            "ALTER TABLE request_logs ALTER COLUMN latency_ms TYPE BIGINT;"
+        ).execute(&self.pool).await;
+
         Ok(())
     }
 
