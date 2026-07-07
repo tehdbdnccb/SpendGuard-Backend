@@ -87,6 +87,33 @@ pub async fn create_workflow(
     }
 }
 
+#[derive(Debug, Deserialize)]
+pub struct SetSpendRequest {
+    pub current_spend_cents: i64,
+}
+
+pub async fn set_agent_spend(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    Json(req): Json<SetSpendRequest>,
+) -> impl IntoResponse {
+    let mut agent = match state.db.get_agent(id).await {
+        Ok(Some(a)) => a,
+        Ok(None) => return (StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "error": "agent not found" }))).into_response(),
+        Err(e) => { tracing::error!("{e}");
+            return (StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": "internal_error" }))).into_response(); }
+    };
+    agent.current_spend_cents = req.current_spend_cents;
+    match state.db.update_agent(&agent).await {
+        Ok(_) => (StatusCode::OK, Json(agent)).into_response(),
+        Err(e) => { tracing::error!("{e}");
+            (StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": "failed to update agent" }))).into_response() }
+    }
+}
+
 pub async fn kill_agent(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
