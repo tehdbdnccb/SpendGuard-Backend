@@ -36,13 +36,13 @@ async fn main() -> anyhow::Result<()> {
     .route("/agents/:id/kill-switch", post(api::agents::kill_agent))
     .route("/agents", post(api::agents::create_agent))
     .route("/workflows", post(api::agents::create_workflow))
-    .route("/admin/agents/:id/set-spend", post(api::agents::set_agent_spend))
     .layer(axum_middleware::from_fn(middleware::api_key_auth));
 
 let app = Router::new()
     .route("/v1/proxy/chat/completions", post(api::proxy::chat_completions))
     .route("/ws/telemetry", get(api::telemetry_ws::telemetry_ws))
     .route("/agents", get(api::agents::list_agents))
+    .route("/admin/agents/:id/set-spend", post(api::agents::set_agent_spend))
     .merge(protected)
     .layer(cors)
     .layer(TraceLayer::new_for_http())
