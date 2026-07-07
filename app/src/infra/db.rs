@@ -25,8 +25,8 @@ impl Db {
             "CREATE TABLE IF NOT EXISTS agents (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
-                monthly_budget_cents INTEGER NOT NULL,
-                current_spend_cents INTEGER NOT NULL DEFAULT 0,
+                monthly_budget_cents BIGINT NOT NULL,
+                current_spend_cents BIGINT NOT NULL DEFAULT 0,
                 status TEXT NOT NULL DEFAULT 'active'
             );"
         ).execute(&self.pool).await?;
@@ -48,10 +48,10 @@ impl Db {
                 workflow_id TEXT REFERENCES workflows(id),
                 model TEXT NOT NULL,
                 btl_cache_tier TEXT NOT NULL,
-                benchmark_cost_cents INTEGER NOT NULL,
-                customer_charge_cents INTEGER NOT NULL,
-                saved_cents INTEGER NOT NULL,
-                latency_ms INTEGER NOT NULL,
+                benchmark_cost_cents BIGINT NOT NULL,
+                customer_charge_cents BIGINT NOT NULL,
+                saved_cents BIGINT NOT NULL,
+                latency_ms BIGINT NOT NULL,
                 ts TEXT NOT NULL
             );"
         ).execute(&self.pool).await?;
