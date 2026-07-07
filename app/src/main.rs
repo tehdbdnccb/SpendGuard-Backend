@@ -31,16 +31,17 @@ async fn main() -> anyhow::Result<()> {
     let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
 
     let protected = Router::new()
-    .route("/agents", get(api::agents::list_agents).post(api::agents::create_agent))
     .route("/agents/:id", get(api::agents::get_agent))
     .route("/agents/:id/ledger", get(api::agents::get_agent_ledger))
     .route("/agents/:id/kill-switch", post(api::agents::kill_agent))
+    .route("/agents", post(api::agents::create_agent))
     .route("/workflows", post(api::agents::create_workflow))
     .layer(axum_middleware::from_fn(middleware::api_key_auth));
 
 let app = Router::new()
     .route("/v1/proxy/chat/completions", post(api::proxy::chat_completions))
     .route("/ws/telemetry", get(api::telemetry_ws::telemetry_ws))
+    .route("/agents", get(api::agents::list_agents))
     .merge(protected)
     .layer(cors)
     .layer(TraceLayer::new_for_http())
@@ -51,3 +52,4 @@ let app = Router::new()
     axum::serve(listener, app).await?;
     Ok(())
 }
+
